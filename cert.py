@@ -48,14 +48,28 @@ def detect_hidden_text(uploaded_file, contrast_threshold=0.1, font_size_threshol
     
     return hidden_words
 
+def get_certifications(field):
+    model = genai.GenerativeModel("gemini-1.5-pro")
+    prompt = f"Suggest some relevant certifications with their descriptions and links to enhance a resume for a career in {field}. Return a JSON list with certification name, description, and link."
+    response = model.generate_content(prompt)
+    return response.text if response and response.text else "No recommendations found."
+
 st.set_page_config(page_title="Jobfy - Your Career Assistant", layout="centered")
 
 st.markdown(
     """
     <style>
-        .stApp {
-            background-color: #E3F2FD; /* Light blue background */
-        }
+        .stApp { background-color: #E3F2FD; }
+        .glow { font-size: 24px; font-weight: bold; padding: 10px; border-radius: 10px; animation: glow 1.5s infinite alternate; }
+        .gold { background: linear-gradient(45deg, #FFD700, #FFAA00); color: black; }
+        .silver { background: linear-gradient(45deg, #C0C0C0, #A9A9A9); color: black; }
+        .bronze { background: linear-gradient(45deg, #CD7F32, #8B4513); color: white; }
+        .card { padding: 20px; border-radius: 12px; box-shadow: 4px 6px 15px rgba(0, 0, 0, 0.3); margin: 15px; transition: transform 0.3s; }
+        .card:hover { transform: scale(1.05); }
+        .card1 { background-color: #26C2EC; }
+        .card2 { background-color: #F4CE0E; }
+        .card3 { background-color: #F4CE0E; }
+        .cert-card { background-color: #F4CE0E; }
     </style>
     """,
     unsafe_allow_html=True
@@ -67,63 +81,54 @@ tab1, tab2 = st.tabs(["📄 Resume Matcher", "🎓 Certification Recommender"])
 
 with tab1:
     st.subheader("📄 Resume ATS Matcher")
-    
     uploaded_file = st.file_uploader("Upload your resume (PDF)", type="pdf")
     job_description = st.text_area("Paste the Job Description")
     
     if st.button("Analyze Resume"):
         if uploaded_file and job_description:
             st.write("Processing... ⏳")
-            
-            # Detect hidden text without saving file
             hidden_texts = detect_hidden_text(uploaded_file)
             
-            if len(hidden_texts) > 5:  # Flag if too many hidden words
+            if len(hidden_texts) > 5:
                 st.error("⚠️ Hidden text detected! This resume may be flagged as manipulated.")
                 st.text_area("Detected Hidden Text", "\n".join(hidden_texts))
             else:
-                # Proceed with ATS analysis
                 resume_text = input_pdf_text(uploaded_file)
                 input_prompt = f"""
-                Act as an ATS (Applicant Tracking System) with expertise in software engineering, data science, and big data engineering.
-                Your task:
-                1. Analyze the resume and compare it with the job description.
-                2. Assign a **matching percentage** based on JD.
-                3. List **missing keywords** required for the role.
-                4. Generate a **profile summary**.
-
-                Resume:
-                {resume_text}
-
-                Job Description:
-                {job_description}
-
-                Return the response **strictly in JSON format**:
-
-                {{
-                  "JD Match": "XX%",
-                  "MissingKeywords": ["keyword1", "keyword2"],
-                  "Profile Summary": "Your profile summary goes here."
-                }}
+                Act as an ATS system. Analyze the resume and job description.
+                Return the response strictly in JSON format:
+                {{ "JD Match": "XX%", "MissingKeywords": ["keyword1", "keyword2"], "Profile Summary": "Summary here." }}
                 """
-                
-                # Get AI response
                 response_text = get_gemini_response(input_prompt)
                 
                 try:
                     cleaned_response = re.sub(r"```json|```", "", response_text).strip()
                     response_json = json.loads(cleaned_response)
                     
-                    st.markdown("### Results")
-                    col1, col2 = st.columns(2)
+                    match_score = int(response_json["JD Match"].replace('%', '').strip())
+                    color_class = "gold" if match_score >= 70 else "silver" if match_score >= 50 else "bronze"
                     
-                    with col1:
-                        st.markdown(f"**ATS Match Score:** {response_json['JD Match']}")
-                        
-                    with col2:
-                        st.markdown(f"**Missing Keywords:** {', '.join(response_json['MissingKeywords'])}")
-                        
-                    st.markdown(f"**Profile Summary:** {response_json['Profile Summary']}")
-                except json.JSONDecodeError:
+                    st.markdown(f"<div class='card glow {color_class} card1'>ATS Match Score: {response_json['JD Match']}</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div class='card card2'>Missing Keywords: {', '.join(response_json['MissingKeywords'])}</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div class='card card3'>Profile Summary: {response_json['Profile Summary']}</div>", unsafe_allow_html=True)
+                except (json.JSONDecodeError, KeyError, ValueError):
                     st.error("AI response is not in valid JSON format. Please try again.")
                     st.text_area("Raw AI Response", response_text)
+
+with tab2:
+    st.subheader("🎓 Find Certifications to Boost Your Resume")
+    field = st.text_input("Enter your field of interest:")
+    
+    if st.button("Get Recommendations"):
+        if field:
+            recommendations = get_certifications(field)
+            try:
+                cleaned_recommendations = re.sub(r"```json|```", "", recommendations).strip()
+                recommendations_json = json.loads(cleaned_recommendations)
+                certification_list = [f"<div class='card cert-card'><strong>{cert['name']}</strong><br>{cert['description']}<br><a href='{cert['link']}' target='_blank'>Access Here</a></div>" for cert in recommendations_json]
+                st.markdown("".join(certification_list), unsafe_allow_html=True)
+            except json.JSONDecodeError:
+                st.error("AI response is not in valid JSON format. Please try again.")
+                st.text_area("Raw AI Response", recommendations)
+        else:
+            st.warning("Please enter a field before getting recommendations.")
