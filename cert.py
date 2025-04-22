@@ -95,7 +95,7 @@ with tab1:
             else:
                 resume_text = input_pdf_text(uploaded_file)
                 input_prompt = f"""
-                Act as an ATS system. Analyze the resume and job description.
+                Act as an Applicant tracking system. Analyze the resume and job description.
                 Return the response strictly in JSON format:
                 {{ "JD Match": "XX%", "MissingKeywords": ["keyword1", "keyword2"], "Profile Summary": "Summary here." }}
                 """
