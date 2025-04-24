@@ -69,7 +69,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("🚀 JOBFY - AI Career Assistant")
+st.title("🚀 JOBFY")
 
 tab1, tab2 = st.tabs(["📄 Resume Matcher", "🎓 Certification Recommender"])
 
