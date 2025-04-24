@@ -95,7 +95,7 @@ with tab1:
             else:
                 resume_text = input_pdf_text(uploaded_file)
                 input_prompt = f"""
-                Act as an Applicant tracking system. Analyze the resume and job description.
+               Act as an Applicant Tracking System (ATS). Analyze the given resume and job description thoroughly. Identify the key skills, experiences, and qualifications in both documents. Match the candidate's profile with the job requirements and provide a detailed compatibility score. Highlight strong matches, missing skills, and potential areas for improvement in the resume. Suggest specific keywords or phrases that can be added to the resume to increase the chances of getting shortlisted. Present your analysis in a clear and structured format..
                 Return the response strictly in JSON format:
                 {{ "JD Match": "XX%", "MissingKeywords": ["keyword1", "keyword2"], "Profile Summary": "Summary here." }}
                 """
