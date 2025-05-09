@@ -6,22 +6,27 @@ from dotenv import load_dotenv
 import json
 import re  # For cleaning AI output
 
+# Function to get response from Gemini Flash model
 def get_gemini_response(input):
-    model = genai.GenerativeModel('gemini-1.5-pro-latest')
+    # Change the model initialization to use Gemini 2.0 Flash model
+    model = genai.GenerativeModel('gemini-2.0-flash')  # Switching to the 'gemini-2.0-flash' model
     response = model.generate_content(input, stream=False)
     return response.text
 
+# Function to extract text from PDF
 def input_pdf_text(uploaded_file):
     doc = fitz.open(stream=uploaded_file.getbuffer(), filetype="pdf")
     text = "\n".join([page.get_text("text") for page in doc])
     return text.strip()
 
+# Function to calculate luminance
 def calculate_luminance(color):
     r = (color >> 16) & 0xFF
     g = (color >> 8) & 0xFF
     b = color & 0xFF
     return (0.299 * r + 0.587 * g + 0.114 * b) / 255
 
+# Function to detect hidden text in a PDF
 def detect_hidden_text(uploaded_file, contrast_threshold=0.1, font_size_threshold=3):
     doc = fitz.open(stream=uploaded_file.getbuffer(), filetype="pdf")
     hidden_words = []
@@ -45,12 +50,14 @@ def detect_hidden_text(uploaded_file, contrast_threshold=0.1, font_size_threshol
     
     return hidden_words
 
+# Function to get certifications for a specific field
 def get_certifications(field):
-    model = genai.GenerativeModel("gemini-1.5-pro")
+    model = genai.GenerativeModel("gemini-2.0-flash")  # Switching to the 'gemini-2.0-flash' model
     prompt = f"Suggest some relevant certifications with their descriptions and links to enhance a resume for a career in {field}. Return a JSON list with certification name, description, and link."
     response = model.generate_content(prompt)
     return response.text if response and response.text else "No recommendations found."
 
+# Streamlit configuration and interface
 st.set_page_config(page_title="Jobfy - Your Career Assistant", layout="centered")
 
 st.markdown("""
