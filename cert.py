@@ -137,8 +137,10 @@ with tab2:
                 cleaned_recommendations = re.sub(r"```json|```", "", recommendations).strip()
                 recommendations_json = json.loads(cleaned_recommendations)
                 certification_list = [
-                    f"<div class='card cert-card'><strong>{cert['name']}</strong><br>{cert['description']}<br><a href='{cert['link']}' target='_blank'>Access Here</a></div>"
-                    for cert in recommendations_json
+                f"<div class='card cert-card'><strong>{cert.get('name', 'CERTIFICAT')}</strong><br>"
+                f"{cert.get('description', 'No Description Available')}<br>"
+                f"<a href='{cert.get('link', '#')}' target='_blank'>Access Here</a></div>"
+                for cert in recommendations_json
                 ]
                 st.markdown("".join(certification_list), unsafe_allow_html=True)
             except json.JSONDecodeError:
